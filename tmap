@@ -1,0 +1,296 @@
+library(sf)
+library(ggmap)
+library(mapview)
+library(dplyr)
+library(tmap)
+library(tmaptools)
+library(osmdata)
+library(osmplotr)
+library(tidyverse)
+library(leaflet)
+library(sp)
+library(raster)
+#Prepare colors for plots
+custom_colors <- list()
+colors_dutch <- c(
+  '#45aaf2','#A3CB38','#1289A7','#D980FA','#F79F1F',
+  '#EE5A24','#009432','#833471','#1B1464','#0652DD',
+  '#006266','#EA2027','#1B1464','#5758BB','#6F1E51')
+colors_spanish <- c(
+  '#40407a','#706fd3','#f7f1e3','#34ace0','#33d9b2',
+  '#2c2c54','#474787','#aaa69d','#227093','#218c74',
+  '#ff5252','#ff793f','#d1ccc0','#ffb142','#ffda79',
+  '#b33939','#cd6133','#84817a','#cc8e35','#ccae62')
+custom_colors$discrete <- c(colors_dutch, colors_spanish)
+
+
+nana <- read.csv("~/Downloads/nana1 (1).csv") %>% as_tibble()
+#leaflet() %>% addTiles()
+#leaflet() %>% setView(0,0,3) %>% addTiles() %>% addCircleMarkers(data = nana, lat = ~lat, lng = ~long)
+
+## start point Ghana as center
+nana <- matrix(c(-1.0231940, 7.946527), ncol = 2)
+colnames(nana) <- c("long", "lat")
+
+
+## end points
+locations <- data.frame(Long = c(-4.260644913,-4.31025362,
+                                -5.54708,
+                                -6.6386,
+                                -4.024429,
+                                34.21249771,
+                                9.402246475,
+                                -16.76333046,
+                                -14.77929688,
+                                85.50409698,
+                                35.26386642,
+                                35.26464844,
+                                35.94238281,
+                                -8.603565216,
+                                -8.587890625,
+                                4.227636337,
+                                4.229980469,
+                                14.81855488,
+                                5.291266,
+                                5.83818388,
+                                6.184277534,
+                                5.491992474,
+                                2.707715034,
+                                2.785156488,
+                                2.686035395,
+                                -11.41743088,
+                                -12.52607441,
+                                127.0307693,
+                                30.67275429,
+                                30.74199104,
+                                0.583593607,
+                                44.54531097,
+                                -6.649804592,
+                                -6.664209366,
+                                -6.646874428,
+                                28.34716797,
+                                53.92783356,
+                                52.61689377,
+                                53.3322258,
+                                54.46543121,
+                                56.29785156,
+                                53.68964767,
+                                54.42841721,
+                                53.4453125,
+                                55.50849533,
+                                -82.18437195,
+                                -118.5901871,
+                                -96.92134094,
+                                -1.0231940), Lat = c(12.9753418,
+                                                       13.05249023,
+                                                       7.539989,
+                                                       4.7514,
+                                                       5.345317,
+                                                       31.29228592,
+                                                       -2.027636766,
+                                                       13.06416035,
+                                                       11.40551662,
+                                                       19.88769531,
+                                                       5.457910061,
+                                                       5.412060738,
+                                                       33.66757584,
+                                                       6.507812977,
+                                                       6.490527153,
+                                                       19.14277267,
+                                                       18.41059494,
+                                                       -25.24638748,
+                                                       52.132633,
+                                                       13.76538086,
+                                                       13.66367149,
+                                                       13.87285233,
+                                                       7.826611519,
+                                                       7.476856232,
+                                                       7.873730183,
+                                                       12.83188534,
+                                                       7.436328411,
+                                                       34.606884,
+                                                       -1.051367283,
+                                                       -1.007519364,
+                                                       8.145800591,
+                                                       37.65815735,
+                                                       54.05864334,
+                                                       54.08476639,
+                                                       54.16342926,
+                                                       48.2130394,
+                                                       24.17719841,
+                                                       24.28857422,
+                                                       24.25859261,
+                                                       24.44277191,
+                                                       25.65068245,
+                                                       24.21079063,
+                                                       24.42509842,
+                                                       24.37119102,
+                                                       23.72460938,
+                                                       26.48095703,
+                                                       33.01118088,
+                                                       28.01601601,
+                                                       7.946527))
+
+orig_df <- data.frame (long = c(rep.int(-1.0231940,nrow(locations))),
+                               lat = c(rep.int(7.946527,nrow(locations)))
+                                        )
+ #Duplicta center of                               
+orig_df$sequence <- c(sequence = seq(1, length.out = nrow(orig_df), by=2))
+locations$sequence <- c(sequence = seq(2, length.out = nrow(orig_df), by=2))
+
+
+install.packages("sqldf")
+library(sqldf)
+q <- "
+SELECT * FROM orig_df
+UNION ALL
+SELECT * FROM locations
+ORDER BY sequence
+"
+poly_df <- sqldf(q)
+write.csv(poly_df, file = "~/Downloads/poly_df.csv")
+
+library(leaflet)
+leaflet() %>%
+  addTiles() %>%
+  
+  addPolylines(
+    data = poly_df,
+    lng = ~long, 
+    lat = ~lat,
+    weight = 2,
+    opacity = 2
+  )
+
+poly_dy <- read.csv("~/Documents/Minister/poly_df.csv")
+
+c25 <- c(
+  "dodgerblue2", "#E31A1C", # red
+  "green4",
+  "#6A3D9A", # purple
+  "#FF7F00", # orange
+  "black", "gold1",
+  "skyblue2", "#FB9A99", # lt pink
+  "palegreen2",
+  "#CAB2D6", # lt purple
+  "#FDBF6F", # lt orange
+  "gray70", "khaki2",
+  "maroon", "orchid1", "deeppink1", "blue1", "steelblue4",
+  "darkturquoise", "green1", "yellow4", "yellow3",
+  "darkorange4", "brown"
+)
+custom_colors$discrete <- c(c25)
+
+#leaflet() %>% addTiles() %>% addCircleMarkers(data = poly_dy, lat = ~lat, lng = ~long, radius = ~3)
+poly_dy <- poly_dy %>% mutate(popup_info = paste("Country Names:",place))
+poly_dy$popup_info
+
+colors <- (custom_colors$discrete)
+pal <- colorFactor(colors, poly_dy$Variant)
+leaflet() %>% setView(0,0,3) %>% addTiles() %>% addPolylines(data = poly_dy, lng = ~long, lat = ~lat, weight = 2, opacity = 3) %>% 
+  addCircleMarkers(data = poly_dy, lat = ~lat, lng = ~long, radius = ~10, popup = ~popup_info,
+                                              stroke = 0, fillOpacity = 1, color = ~pal(Variant))
+
+
+colors <- (custom_colors$discrete)
+pal <- colorFactor(colors, poly_dy$Variant)
+leaflet() %>% setView(0,0,3) %>% addTiles() %>% addPolylines(data = poly_dy, lng = ~long, lat = ~lat, weight = 2, opacity = 3, color = ~pal(Variant)) %>% 
+  addCircleMarkers(data = poly_dy, lat = ~lat, lng = ~long, radius = ~10, popup = ~popup_info,
+                   stroke = 0, fillOpacity = 1)
+poly_dy <- read.csv("~/Documents/Minister/poly_df.csv")
+
+#leaflet() %>% addTiles() %>% addCircleMarkers(data = poly_dy, lat = ~lat, lng = ~long, radius = ~3)
+
+c25 <- c(
+  "dodgerblue2", "#E31A1C", # red
+  "green4",
+  "#6A3D9A", # purple
+  "#FF7F00", # orange
+  "black", "gold1",
+  "skyblue2", "#FB9A99", # lt pink
+  "palegreen2",
+  "#CAB2D6", # lt purple
+  "#FDBF6F", # lt orange
+  "gray70", "khaki2",
+  "maroon", "orchid1", "deeppink1", "blue1", "steelblue4",
+  "darkturquoise", "green1", "yellow4", "yellow3",
+  "darkorange4", "brown"
+)
+custom_colors$discrete <- c(c25)
+poly_dy <- read.csv("~/Documents/Minister/poly_df.csv")
+poly_dy <- poly_dy %>% mutate(popup_info = paste("Country Names:",place))
+poly_dy$popup_info
+library(leaflet.extras)
+colors <- (custom_colors$discrete)
+pal <- colorFactor(colors, poly_dy$Variant)
+nn <- leaflet() %>% setView(0,0,3)%>% addProviderTiles(providers$CartoDB.Positron) %>%
+  addGeodesicPolylines(data = poly_dy, lng = ~long, lat = ~lat, weight = 2, opacity = 3, steps = 50) %>%
+  addCircleMarkers(data = poly_dy, lat = ~lat, lng = ~long, radius = ~6, popup = ~popup_info,
+                   stroke = 0, fillOpacity = 1, color = ~pal(Variant)) %>%
+  addLegend("bottomright", pal = pal, values = poly_dy$Variant, title = "Travelers Map", opacity = 2)
+
+
+############################################################################################################################
+library(leaflet)
+leaflet() %>%
+  addTiles() %>%
+  
+  addPolylines(
+    data = nana,
+    lng = ~long, 
+    lat = ~lat,
+    weight = 3,
+    opacity = 3
+  ) 
+
+require(ggplot2)
+require(ggmap)
+
+h
+
+nana_s <- st_as_sf(nana, coords = c("long","lat"), crs = 4326)
+mapview(nana_s)
+
+ggplot(nana, aes(long, lat)) + 
+  geom_point(nana, mapping = aes(x = long, y = lat), colour = "red") + 
+  coord_sf()
+  
+ggplot(nana) + 
+  geom_sf(nana) + 
+  geom_sf(nana, colour = "black", fill = NA) + 
+  geom_point(nana, mapping = aes(x = long, y = lat), colour = "red") + 
+  coord_sf()
+
+ggplot(nana, aes(long, lat, group = group)) +
+  geom_polygon(fill = "white", colour = "grey50") + 
+  coord_quickmap()
+
+
+
+a <- spread(nana, key = Variant, value = count)
+a1 <- a %>%
+  filter(!is.na(a))
+
+a1[is.na(a1)] <- 0
+
+a1$total <- rowSums(a1[, c(5:22)])
+
+a2 <- st_as_sf(a1, coords = c("long","lat"))
+
+tmap_mode("view")
+
+box <- c(xmin=min(nana$long),
+         ymin=min(nana$lat),
+         xmax=max(nana$long),
+         ymax=max(nana$lat))
+
+
+#map
+nana$log_count <- log10(nana$count)
+a3 <- st_as_sf(nana, coords = c("long","lat"))
+
+tm_shape() + tm_lines(col = "grey") + tm_shape(a3)+
+  tm_bubbles(col = "log_count", size = 0.5) +
+  tm_facets(by = "Variant", free.coords = F) +
+  tm_compass(type = "arrow", text.size = 0.5, position = c(0.7,0.005)) +
+  tm_scale_bar(breaks = c(0,1), text.size = 1, position = c(0.15,0.01))
